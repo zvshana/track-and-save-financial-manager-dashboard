@@ -5,7 +5,6 @@ Final Project - Web Development Course
 DEVELOPER DETAILS
 ==================================================
 Name: Sara Shana Zivi
-ID: 209941152
 
 ==================================================
 PROJECT OVERVIEW
