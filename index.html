@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track & Save — Financial Manager</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="logo-area">
+            <div class="logo-icon">₪</div>
+            <div>
+                <h1>Track <span class="logo-amp">&</span> Save</h1>
+                <p class="tagline">A smarter way to manage your money</p>
+            </div>
+        </div>
+        <div class="header-actions">
+            <div class="rate-badge" id="rate-badge">
+                <span class="rate-dot"></span>
+                <span id="rate-status">Loading rates…</span>
+            </div>
+            <button id="resetBtn" class="btn btn-outline" title="Reset all data">🗑 Reset Data</button>
+            <button id="exportBtn" class="btn btn-outline" title="Export all data as JSON">⬇ Export</button>
+            <button id="detailsBtn" class="btn btn-primary">👤 Personal Details</button>
+        </div>
+    </header>
+
+    <nav class="tab-menu">
+        <button class="tab-link active" onclick="openTab(event, 'Overview')">
+            <span class="tab-icon">◈</span> Overview
+        </button>
+        <button class="tab-link" onclick="openTab(event, 'Incomes')">
+            <span class="tab-icon">↑</span> Incomes
+        </button>
+        <button class="tab-link" onclick="openTab(event, 'Expenses')">
+            <span class="tab-icon">↓</span> Expenses
+        </button>
+        <button class="tab-link" onclick="openTab(event, 'Savings')">
+            <span class="tab-icon">◎</span> Savings
+        </button>
+    </nav>
+
+    <main id="main-content">
+
+        <div id="Overview" class="tab-content active">
+            <div class="overview-grid">
+
+                <div class="stat-cards-row">
+                    <div class="stat-card income-card">
+                        <div class="stat-label">Total Income</div>
+                        <div class="stat-value">₪ <span id="ov-income">0.00</span></div>
+                        <div class="stat-sub" id="ov-income-count">0 entries</div>
+                    </div>
+                    <div class="stat-card expense-card">
+                        <div class="stat-label">Total Expenses</div>
+                        <div class="stat-value">₪ <span id="ov-expense">0.00</span></div>
+                        <div class="stat-sub" id="ov-expense-count">0 entries</div>
+                    </div>
+                    <div class="stat-card net-card">
+                        <div class="stat-label">Net Balance</div>
+                        <div class="stat-value" id="ov-net-full">₪ 0.00</div>
+                        <div class="stat-sub" id="ov-net-label">Income − Expenses</div>
+                    </div>
+                    <div class="stat-card savings-stat-card">
+                        <div class="stat-label">Saved in Goals</div>
+                        <div class="stat-value">₪ <span id="ov-savings">0.00</span></div>
+                        <div class="stat-sub" id="ov-goals-count">0 active goals</div>
+                    </div>
+                </div>
+
+                <div class="overview-chart-card card">
+                    <div class="card-header">
+                        <h3>Income vs Expenses</h3>
+                        <span class="card-hint" id="ov-chart-hint">All time</span>
+                    </div>
+                    <div class="chart-wrap" style="height:240px;">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card top-cats-card">
+                    <div class="card-header">
+                        <h3>Live Exchange Rates (₪)</h3>
+                    </div>
+                    <div class="chart-wrap" style="height:220px;">
+                        <canvas id="exchangeRatesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card goals-summary-card">
+                    <div class="card-header"><h3>Savings Goals</h3></div>
+                    <div id="ov-goals-list" class="ov-goals-list">
+                        <div class="empty-state-small">No goals yet</div>
+                    </div>
+                </div>
+
+                <div class="card activity-card">
+                    <div class="card-header">
+                        <h3>Recent Activity</h3>
+                        <button class="clear-link" id="clearActivityBtn">Clear</button>
+                    </div>
+                    <ul id="activity-list" class="activity-list">
+                        <li class="empty-state-small">No activities recorded yet.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="Incomes" class="tab-content">
+            <div class="tab-header-bar">
+                <div>
+                    <h2 class="tab-title">Incomes</h2>
+                    <p class="tab-subtitle">Track all your income sources</p>
+                </div>
+                <button id="openIncomeModal" class="btn btn-income btn-lg">+ Add Income</button>
+            </div>
+
+            <div class="search-sort-bar">
+                <input type="text" id="income-search" placeholder="🔍  Search incomes…" class="search-input">
+                <select id="income-sort" class="sort-select">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="amount-desc">Highest amount</option>
+                    <option value="amount-asc">Lowest amount</option>
+                </select>
+            </div>
+
+            <div class="expenses-grid">
+                <div class="table-container card">
+                    <table id="incomeTable">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Note</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeBody">
+                            <tr id="income-empty-row">
+                                <td colspan="6" class="empty-table-cell">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">↑</div>
+                                        <p>No income entries yet.<br>Click <strong>+ Add Income</strong> to get started.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="2">Total (ILS)</td>
+                                <td colspan="4" class="total-amount-cell income-total-cell">+₪ <span id="total-income-sum">0.00</span></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="filters-charts-container">
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Method</label>
+                            <select id="filter-income-method">
+                                <option value="ALL">All Methods</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Credit Card">Credit Card</option>
+                                <option value="Check">Check</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="incomeMethodChart"></canvas></div>
+                    </div>
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Currency</label>
+                            <select id="filter-income-currency">
+                                <option value="ALL">All Currencies</option>
+                                <option value="ILS">₪ ILS</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="JPY">¥ JPY</option><option value="CAD">C$ CAD</option><option value="AUD">A$ AUD</option><option value="CHF">CHF</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="incomeCurrencyChart"></canvas></div>
+                    </div>
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Category</label>
+                            <select id="filter-income-category">
+                                <option value="ALL">All Categories</option>
+                                <option value="Salary / Wages">Salary / Wages</option>
+                                <option value="Freelance">Freelance</option>
+                                <option value="Business Income">Business Income</option>
+                                <option value="Bonus / Commission">Bonus / Commission</option>
+                                <option value="Investment Income">Investment Income</option>
+                                <option value="Rental Income">Rental Income</option>
+                                <option value="Gift / Refund">Gift / Refund</option>
+                                <option value="Other Income">Other Income</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="incomeCategoryChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="Expenses" class="tab-content">
+            <div class="tab-header-bar">
+                <div>
+                    <h2 class="tab-title">Expenses</h2>
+                    <p class="tab-subtitle">Keep track of where your money goes</p>
+                </div>
+                <button id="openExpenseModal" class="btn btn-danger btn-lg">+ Add Expense</button>
+            </div>
+
+            <div class="search-sort-bar">
+                <input type="text" id="expense-search" placeholder="🔍  Search expenses…" class="search-input">
+                <select id="expense-sort" class="sort-select">
+                    <option value="date-desc">Newest first</option>
+                    <option value="date-asc">Oldest first</option>
+                    <option value="amount-desc">Highest amount</option>
+                    <option value="amount-asc">Lowest amount</option>
+                </select>
+            </div>
+
+            <div class="expenses-grid">
+                <div class="table-container card">
+                    <table id="expenseTable">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Note</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseBody">
+                            <tr id="expense-empty-row">
+                                <td colspan="6" class="empty-table-cell">
+                                    <div class="empty-state">
+                                        <div class="empty-icon">↓</div>
+                                        <p>No expense entries yet.<br>Click <strong>+ Add Expense</strong> to get started.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="2">Total (ILS)</td>
+                                <td colspan="4" class="total-amount-cell expense-total-cell">−₪ <span id="total-expense-sum">0.00</span></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="filters-charts-container">
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Method</label>
+                            <select id="filter-method">
+                                <option value="ALL">All Methods</option>
+                                <option value="Cash">Cash</option><option value="Credit Card">Credit Card</option><option value="Check">Check</option><option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="methodChart"></canvas></div>
+                    </div>
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Currency</label>
+                            <select id="filter-currency">
+                                <option value="ALL">All Currencies</option>
+                                <option value="ILS">₪ ILS</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="JPY">¥ JPY</option><option value="CAD">C$ CAD</option><option value="AUD">A$ AUD</option><option value="CHF">CHF</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="currencyChart"></canvas></div>
+                    </div>
+                    <div class="filter-card card">
+                        <div class="filter-header"><label>By Category</label>
+                            <select id="filter-category">
+                                <option value="ALL">All Categories</option>
+                                <option value="Housing">Housing</option><option value="Bills">Bills</option><option value="Food">Food</option><option value="Transport">Transport</option><option value="Health">Health</option><option value="Shopping">Shopping</option><option value="Entertainment">Entertainment</option><option value="Savings">Savings</option><option value="Donations">Donations</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="Savings" class="tab-content">
+            <div class="tab-header-bar">
+                <div>
+                    <h2 class="tab-title">Savings Goals</h2>
+                    <p class="tab-subtitle">Set goals, deposit funds, track progress</p>
+                </div>
+                <button id="openGoalModal" class="btn btn-savings btn-lg">+ New Goal</button>
+            </div>
+
+            <div class="savings-summary-bar">
+                <div class="sav-sum-item">
+                    <span class="sav-sum-label">Total Saved</span>
+                    <span class="sav-sum-value" id="sav-total-saved">₪ 0.00</span>
+                </div>
+                <div class="sav-sum-item">
+                    <span class="sav-sum-label">Total Target</span>
+                    <span class="sav-sum-value" id="sav-total-target">₪ 0.00</span>
+                </div>
+                <div class="sav-sum-item">
+                    <span class="sav-sum-label">Still Needed</span>
+                    <span class="sav-sum-value" id="sav-total-needed">₪ 0.00</span>
+                </div>
+                <div class="sav-sum-item">
+                    <span class="sav-sum-label">Goals Completed</span>
+                    <span class="sav-sum-value" id="sav-completed-count">0</span>
+                </div>
+            </div>
+
+            <div id="goals-grid" class="goals-grid">
+                <div class="empty-state goals-empty">
+                    <div class="empty-icon">◎</div>
+                    <h3>No savings goals yet</h3>
+                    <p>Create your first goal to start tracking your savings progress.</p>
+                    <button class="btn btn-savings" onclick="document.getElementById('openGoalModal').click()">+ Create First Goal</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="incomeModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeIncomeModal">&times;</button>
+            <h2 class="modal-title"><span class="modal-icon income-icon">↑</span> New Income</h2>
+            <form id="incomeForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inc-amount">Amount <span class="req">*</span></label>
+                        <input type="number" id="inc-amount" placeholder="0.00" required step="0.01" min="0.01">
+                        <span class="field-error" id="inc-amount-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="inc-currency">Currency</label>
+                        <select id="inc-currency">
+                            <option value="ILS">₪ ILS</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="JPY">¥ JPY</option><option value="CAD">C$ CAD</option><option value="AUD">A$ AUD</option><option value="CHF">CHF</option><option value="CNY">¥ CNY</option><option value="HKD">HK$ HKD</option><option value="NZD">NZ$ NZD</option><option value="SEK">kr SEK</option><option value="SGD">S$ SGD</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inc-category">Category</label>
+                        <select id="inc-category">
+                            <option value="Salary / Wages">Salary / Wages</option>
+                            <option value="Freelance">Freelance</option>
+                            <option value="Business Income">Business Income</option>
+                            <option value="Bonus / Commission">Bonus / Commission</option>
+                            <option value="Investment Income">Investment Income</option>
+                            <option value="Rental Income">Rental Income</option>
+                            <option value="Gift / Refund">Gift / Refund</option>
+                            <option value="Other Income">Other Income</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inc-method">Payment Method</label>
+                        <select id="inc-method">
+                            <option value="Cash">Cash</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Check">Check</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="inc-date">Date</label>
+                    <input type="text" id="inc-date" placeholder="Select date" class="flatpickr-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="inc-note">Note</label>
+                    <textarea id="inc-note" placeholder="Optional note…" rows="2"></textarea>
+                </div>
+                <div class="converted-preview" id="inc-preview"></div>
+                <button type="submit" class="btn btn-primary btn-full">Save Income</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeExpenseModal">&times;</button>
+            <h2 class="modal-title"><span class="modal-icon expense-icon">↓</span> New Expense</h2>
+            <form id="expenseForm" novalidate>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exp-amount">Amount <span class="req">*</span></label>
+                        <input type="number" id="exp-amount" placeholder="0.00" required step="0.01" min="0.01">
+                        <span class="field-error" id="exp-amount-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-currency">Currency</label>
+                        <select id="exp-currency">
+                            <option value="ILS">₪ ILS</option><option value="USD">$ USD</option><option value="EUR">€ EUR</option><option value="GBP">£ GBP</option><option value="JPY">¥ JPY</option><option value="CAD">C$ CAD</option><option value="AUD">A$ AUD</option><option value="CHF">CHF</option><option value="CNY">¥ CNY</option><option value="HKD">HK$ HKD</option><option value="NZD">NZ$ NZD</option><option value="SEK">kr SEK</option><option value="SGD">S$ SGD</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="exp-category">Category</label>
+                        <select id="exp-category">
+                            <option value="Housing">Housing</option><option value="Bills">Bills</option><option value="Food">Food</option><option value="Transport">Transport</option><option value="Health">Health</option><option value="Shopping">Shopping</option><option value="Entertainment">Entertainment</option><option value="Savings">Savings</option><option value="Donations">Donations</option><option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="exp-method">Payment Method</label>
+                        <select id="exp-method">
+                            <option value="Cash">Cash</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Check">Check</option>
+                            <option value="Bank Transfer">Bank Transfer</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="exp-date">Date</label>
+                    <input type="text" id="exp-date" placeholder="Select date" class="flatpickr-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="exp-note">Note</label>
+                    <textarea id="exp-note" placeholder="Optional note…" rows="2"></textarea>
+                </div>
+                <div class="converted-preview" id="exp-preview"></div>
+                <button type="submit" class="btn btn-danger btn-full">Save Expense</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="goalModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeGoalModal">&times;</button>
+            <h2 class="modal-title"><span class="modal-icon savings-icon">◎</span> New Savings Goal</h2>
+            <form id="goalForm" novalidate>
+                <div class="form-group">
+                    <label for="goal-name">Goal Name <span class="req">*</span></label>
+                    <input type="text" id="goal-name" placeholder="e.g. Vacation, Emergency Fund…" required>
+                    <span class="field-error" id="goal-name-err"></span>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="goal-target">Target Amount (₪) <span class="req">*</span></label>
+                        <input type="number" id="goal-target" placeholder="0.00" required step="0.01" min="1">
+                        <span class="field-error" id="goal-target-err"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="goal-initial">Initial Deposit (₪)</label>
+                        <input type="number" id="goal-initial" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="goal-deadline">Target Date (optional)</label>
+                    <input type="text" id="goal-deadline" placeholder="Select deadline" class="flatpickr-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="goal-emoji">Icon</label>
+                    <div class="emoji-picker">
+                        <span class="emoji-opt selected" data-emoji="🎯">🎯</span>
+                        <span class="emoji-opt" data-emoji="✈️">✈️</span>
+                        <span class="emoji-opt" data-emoji="🏠">🏠</span>
+                        <span class="emoji-opt" data-emoji="🚗">🚗</span>
+                        <span class="emoji-opt" data-emoji="💍">💍</span>
+                        <span class="emoji-opt" data-emoji="📱">📱</span>
+                        <span class="emoji-opt" data-emoji="🎓">🎓</span>
+                        <span class="emoji-opt" data-emoji="💻">💻</span>
+                        <span class="emoji-opt" data-emoji="🏖️">🏖️</span>
+                        <span class="emoji-opt" data-emoji="🛡️">🛡️</span>
+                    </div>
+                    <input type="hidden" id="goal-emoji" value="🎯">
+                </div>
+                <button type="submit" class="btn btn-savings btn-full">Create Goal</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="depositModal" class="modal">
+        <div class="modal-content modal-sm">
+            <button class="modal-close" id="closeDepositModal">&times;</button>
+            <h2 class="modal-title"><span class="modal-icon savings-icon">+</span> Add Deposit</h2>
+            <p id="deposit-goal-name" class="deposit-subtitle"></p>
+            <form id="depositForm" novalidate>
+                <input type="hidden" id="deposit-goal-id">
+                <div class="form-group">
+                    <label for="deposit-amount">Amount (₪) <span class="req">*</span></label>
+                    <input type="number" id="deposit-amount" placeholder="0.00" required step="0.01" min="0.01">
+                    <span class="field-error" id="deposit-amount-err"></span>
+                </div>
+                <div class="form-group">
+                    <label for="deposit-note">Note</label>
+                    <input type="text" id="deposit-note" placeholder="Optional note…">
+                </div>
+                <button type="submit" class="btn btn-savings btn-full">Deposit</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/incomes.js"></script>
+    <script src="js/savings.js"></script>
+</body>
+</html>
